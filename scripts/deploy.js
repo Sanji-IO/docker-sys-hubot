@@ -249,7 +249,7 @@ module.exports = function(robot) {
         // Delay to send message and waiting for site running.
         setTimeout(function() {
           param.msg.reply('Build ' + param.env + ' of ' + param.project + ' complete...:beers:, you can visit by http://192.168.31.85:' + output);
-        }, 40000);
+        }, 50000);
         deferred.resolve(param);
       }
     );
