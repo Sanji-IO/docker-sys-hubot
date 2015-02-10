@@ -128,7 +128,7 @@ module.exports = function(robot) {
     var string;
     var command;
 
-    if (containers) {
+    if (param.containers) {
       string = param.containers.toString();
       command = string.replace(/,/g, ' ');
       shjs.exec(
