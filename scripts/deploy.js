@@ -61,12 +61,14 @@ module.exports = function(robot) {
   }
 
   function init(param) {
+    console.log('=== init parameters ===');
     var deferred = $q.defer();
     deferred.resolve(param);
     return deferred.promise;
   }
 
   function checkCommand(param) {
+    console.log('=== check input command ===');
     var deferred = $q.defer();
     var projectResult = projectList.indexOf(param.project);
 
@@ -106,6 +108,7 @@ module.exports = function(robot) {
   }
 
   function beforeClean(param) {
+    console.log('=== prepare to clean containers ===');
     var deferred = $q.defer();
     shjs.exec(
       'docker ps | grep -o ' + param.prefixName + '.*',
@@ -128,12 +131,12 @@ module.exports = function(robot) {
   }
 
   function clean(param) {
+    console.log('=== clean containers ===');
     var deferred = $q.defer();
     var string;
     var command;
 
     if (param.containers) {
-      console.log('=== start clean task :' + param.containers);
       string = param.containers.toString();
       command = string.replace(/,/g, ' ');
       shjs.exec(
@@ -145,12 +148,10 @@ module.exports = function(robot) {
             throw new Error('Error: clean container fail!');
           }
 
-          console.log(output);
           deferred.resolve(param);
         }
       );
     } else {
-      console.log('=== start clean task :' + param.containers);
       deferred.resolve(param);
     }
 
@@ -158,6 +159,7 @@ module.exports = function(robot) {
   }
 
   function createDir(param) {
+    console.log('=== create directory ===');
     var deferred = $q.defer();
     mktemp.createDir('/tmp/' + param.prefixName + '-XXXX', function(err, path) {
       if (err) {
@@ -176,6 +178,7 @@ module.exports = function(robot) {
   }
 
   function cloneProject(param) {
+    console.log('=== clone project ===');
     var deferred = $q.defer();
     var downloadPath = 'http://' + jenkins + '/job/mxcloud/lastSuccessfulBuild/artifact/*zip*/archive.zip';
     var unzipCommand = 'unzip ' + param.path + '.zip -d ' + param.path;
@@ -190,7 +193,6 @@ module.exports = function(robot) {
           throw new Error('Error: clone project fail!');
         }
 
-        console.log(output);
         deferred.resolve(param);
       }
     );
@@ -198,6 +200,7 @@ module.exports = function(robot) {
   }
 
   function buildWithDocker(param) {
+    console.log('=== build with docker ===');
     var deferred = $q.defer();
     param.msg.reply(param.project + ' is building...:smile:');
     shjs.exec(
@@ -209,7 +212,6 @@ module.exports = function(robot) {
           throw new Error('Error: docker create fail!');
         }
 
-        console.log(output);
         deferred.resolve(param);
       }
     );
@@ -217,6 +219,7 @@ module.exports = function(robot) {
   }
 
   function buildMosquittoMsg(param) {
+    console.log('=== build mosquitto message ===');
     var deferred = $q.defer();
     shjs.exec(
       'docker port ' + param.prefixName + '-mosquitto | sed s/.*://',
@@ -235,6 +238,7 @@ module.exports = function(robot) {
   }
 
   function buildEndMsg(param) {
+    console.log('=== build end message ===');
     var deferred = $q.defer();
     shjs.exec(
       'docker port ' + param.prefixName + '-app | sed s/.*://',
