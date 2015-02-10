@@ -115,20 +115,21 @@ module.exports = function(robot) {
         if (code !== 0) {
           deferred.resolve(param);
         } else {
-          deferred.resolve(param, output.split('\n'));
+          param.containers = output.split('\n');
+          deferred.resolve(param);
         }
       }
     );
     return deferred.promise;
   }
 
-  function clean(param, containers) {
+  function clean(param) {
     var deferred = $q.defer();
     var string;
     var command;
 
     if (containers) {
-      string = containers.toString();
+      string = param.containers.toString();
       command = string.replace(/,/g, ' ');
       shjs.exec(
         'docker rm -f ' + command,
