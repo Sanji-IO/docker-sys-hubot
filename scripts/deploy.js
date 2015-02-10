@@ -10,18 +10,18 @@ module.exports = function(robot) {
   var projectList = ['mxcloud'];
   var jenkins = 'jenkins.192.168.31.86.xip.io';
 
-  robot.respond(/build (.*) (.*)/i, respondForStageMsg);
-  robot.respond(/build (.*) (.*) with broker (.*)/i, respondForTestMsg);
+  robot.respond(/build stage (.*)/i, respondForStageMsg);
+  robot.respond(/build test (.*) with broker (.*)/i, respondForTestMsg);
 
   function respondForStageMsg(msg) {
     var param = {
+      msg: msg,
       username: msg.message.user.name,
       env: msg.match[1].toLowerCase(),
       project: msg.match[2].toLowerCase()
     };
 
     param.prefixName = param.env + '-' + param.project + '-' + param.username;
-    param.msg = msg;
 
     init(param)
       .then(checkCommand)
@@ -39,6 +39,7 @@ module.exports = function(robot) {
 
   function respondForTestMsg(msg) {
     var param = {
+      msg: msg,
       username: msg.message.user.name,
       env: msg.match[1].toLowerCase(),
       project: msg.match[2].toLowerCase(),
@@ -46,7 +47,6 @@ module.exports = function(robot) {
     };
 
     param.prefixName = param.env + '-' + param.project + '-' + param.username;
-    param.msg = msg;
 
     init(param)
       .then(checkCommand)
