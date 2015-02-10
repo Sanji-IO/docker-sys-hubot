@@ -114,16 +114,12 @@ module.exports = function(robot) {
       'docker ps | grep -o ' + param.prefixName + '.*',
       function(code, output) {
         if (code !== 0) {
-          param.msg.reply('Oops! :skull: Somthing is wrong, please build ' + param.project + ' again.');
-          shjs.echo('Error: before clean fail!');
-          throw new Error('Error: before clean fail!');
+          param.msg.reply('First time to build ' + param.project);
+          deferred.resolve(param);
         } else {
-          if (output) {
-            param.containers = output.split('\n');
-            deferred.resolve(param);
-          } else {
-            deferred.resolve(param);
-          }
+          param.msg.reply('Clean last time ' + param.project + ' build');
+          param.containers = output.split('\n');
+          deferred.resolve(param);
         }
       }
     );
