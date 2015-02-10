@@ -72,20 +72,22 @@ module.exports = function(robot) {
 
     if (!shjs.which('git')) {
       param.msg.reply('Oops! :skull: Somthing is wrong, please to contact administrator.');
-      shjs.echo('sorry, this script requires git');
+      shjs.echo('Sorry, this script requires git');
       shjs.exit(1);
+      throw new Error('Sorry, this script requires git');
     }
 
     if (!shjs.which('docker')) {
       param.msg.reply('Oops! :skull: Somthing is wrong, please to contact administrator.');
       shjs.echo('Sorry, this script requires docker');
       shjs.exit(1);
+      throw new Error('Sorry, this script requires docker');
     }
 
     if (-1 !== projectResult) {
       if ('test' === param.env && !param.brokerIp) {
         param.msg.reply('Broker ip not found.');
-        deferred.reject();
+        throw new Error('Broker ip not found.');
       } else {
         param.msg.reply('Preparing to build ' + param.env + ' of ' + param.project + ', please wait... :smiling_imp:');
         deferred.resolve(param);
@@ -94,12 +96,13 @@ module.exports = function(robot) {
 
       if (-1 === projectResult) {
         param.msg.reply(param.project + ' not found.');
+        throw new Error(param.project + ' not found.');
       }
 
       if ('test' === param.env && !param.brokerIp) {
         param.msg.reply('Broker ip not found.');
+        throw new Error('Broker ip not found.');
       }
-      deferred.reject();
     }
     return deferred.promise;
   }
@@ -134,6 +137,7 @@ module.exports = function(robot) {
             param.msg.reply('Oops! :skull: Somthing is wrong, please build ' + param.project + ' again.');
             shjs.echo('Error: clean container fail!');
             shjs.exit(1);
+            throw new Error('Error: clean container fail!');
           }
 
           console.log(output);
@@ -179,6 +183,7 @@ module.exports = function(robot) {
           param.msg.reply('Oops! :skull: Somthing is wrong, please build ' + param.project + ' again.');
           shjs.echo('Error: clone project fail!');
           shjs.exit(1);
+          throw new Error('Error: clone project fail!');
         }
 
         console.log(output);
@@ -198,6 +203,7 @@ module.exports = function(robot) {
           param.msg.reply('Oops! :skull: Somthing is wrong, please build ' + param.project + ' again.');
           shjs.echo('Error: docker create fail!');
           shjs.exit(1);
+          throw new Error('Error: docker create fail!');
         }
 
         console.log(output);
@@ -214,8 +220,9 @@ module.exports = function(robot) {
       function(code, output) {
         if (code !== 0) {
           param.msg.reply('Oops! :skull: Somthing is wrong, please build ' + param.project + ' again.');
-          shjs.echo('Error: docker create fail!');
+          shjs.echo('Error: build mosquitto message fail!');
           shjs.exit(1);
+          throw new Error('Error: build mosquitto message fail!');
         }
 
         param.msg.reply('Mosquitto of ' + param.project + ' is running on ip: 192.168.31.85 and port: ' + output);
@@ -234,6 +241,7 @@ module.exports = function(robot) {
           param.msg.reply('Oops! :skull: Somthing is wrong, please build ' + param.project + ' again.');
           shjs.echo('Error: build end message fail!');
           shjs.exit(1);
+          throw new Error('Error: build end message fail!');
         }
 
         // Delay to send message and waiting for site running.
