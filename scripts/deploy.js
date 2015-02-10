@@ -155,19 +155,25 @@ module.exports = function(robot) {
         throw new Error('create folder error');
       }
 
-      deferred.resolve(param, path);
+      if (path) {
+        param.path = path;
+        deferred.resolve(param);
+      } else {
+        deferred.reject(param);
+      }
     });
     return deferred.promise;
   }
 
-  function cloneProject(param, path) {
+  function cloneProject(param) {
+    console.log('clone project path: ' + param.path);
     var deferred = $q.defer();
     var downloadPath = 'http://' + jenkins + '/job/mxcloud/lastSuccessfulBuild/artifact/*zip*/archive.zip';
-    var unzipCommand = 'unzip ' + path + '.zip -d ' + path;
-    var refactorFolder = 'mv ' + path + '/archive/dist/* ' + path + ' && rm -rf ' + path + '/archive';
-    var chmod = 'chmod 755 ' + path + '/scripts/docker/*';
+    var unzipCommand = 'unzip ' + param.path + '.zip -d ' + param.path;
+    var refactorFolder = 'mv ' + param.path + '/archive/dist/* ' + param.path + ' && rm -rf ' + param.path + '/archive';
+    var chmod = 'chmod 755 ' + param.path + '/scripts/docker/*';
     shjs.exec(
-      'wget ' + downloadPath + ' -O ' + path + '.zip && ' + unzipCommand + ' && ' + refactorFolder + ' && ' + chmod,
+      'wget ' + downloadPath + ' -O ' + param.path + '.zip && ' + unzipCommand + ' && ' + refactorFolder + ' && ' + chmod,
       function(code, output) {
         if (code !== 0) {
           param.msg.reply('Oops! :skull: Somthing is wrong, please build ' + param.project + ' again.');
@@ -176,17 +182,17 @@ module.exports = function(robot) {
         }
 
         console.log(output);
-        deferred.resolve(param, path);
+        deferred.resolve(param);
       }
     );
     return deferred.promise;
   }
 
-  function buildWithDocker(param, path) {
+  function buildWithDocker(param) {
     var deferred = $q.defer();
     param.msg.reply(param.project + ' is building...:smile:');
     shjs.exec(
-      path + '/scripts/docker/build.sh ' + param.env + ' ' + param.prefixName + ' ' + path + ' ' + param.brokerIp,
+      param.path + '/scripts/docker/build.sh ' + param.env + ' ' + param.prefixName + ' ' + param.path + ' ' + param.brokerIp,
       function(code, output) {
         if (code !== 0) {
           param.msg.reply('Oops! :skull: Somthing is wrong, please build ' + param.project + ' again.');
@@ -195,7 +201,7 @@ module.exports = function(robot) {
         }
 
         console.log(output);
-        deferred.resolve(param, path);
+        deferred.resolve(param);
       }
     );
     return deferred.promise;
