@@ -73,14 +73,12 @@ module.exports = function(robot) {
     if (!shjs.which('git')) {
       param.msg.reply('Oops! :skull: Somthing is wrong, please to contact administrator.');
       shjs.echo('Sorry, this script requires git');
-      shjs.exit(1);
       throw new Error('Sorry, this script requires git');
     }
 
     if (!shjs.which('docker')) {
       param.msg.reply('Oops! :skull: Somthing is wrong, please to contact administrator.');
       shjs.echo('Sorry, this script requires docker');
-      shjs.exit(1);
       throw new Error('Sorry, this script requires docker');
     }
 
@@ -115,7 +113,6 @@ module.exports = function(robot) {
         if (code !== 0) {
           param.msg.reply('Oops! :skull: Somthing is wrong, please build ' + param.project + ' again.');
           shjs.echo('Error: before clean fail!');
-          shjs.exit(1);
           throw new Error('Error: before clean fail!');
         } else {
           if (output) {
@@ -136,6 +133,7 @@ module.exports = function(robot) {
     var command;
 
     if (param.containers) {
+      console.log('=== start clean task :' + param.containers);
       string = param.containers.toString();
       command = string.replace(/,/g, ' ');
       shjs.exec(
@@ -144,7 +142,6 @@ module.exports = function(robot) {
           if (code !== 0) {
             param.msg.reply('Oops! :skull: Somthing is wrong, please build ' + param.project + ' again.');
             shjs.echo('Error: clean container fail!');
-            shjs.exit(1);
             throw new Error('Error: clean container fail!');
           }
 
@@ -153,6 +150,7 @@ module.exports = function(robot) {
         }
       );
     } else {
+      console.log('=== start clean task :' + param.containers);
       deferred.resolve(param);
     }
 
@@ -189,7 +187,6 @@ module.exports = function(robot) {
         if (code !== 0) {
           param.msg.reply('Oops! :skull: Somthing is wrong, please build ' + param.project + ' again.');
           shjs.echo('Error: clone project fail!');
-          shjs.exit(1);
           throw new Error('Error: clone project fail!');
         }
 
@@ -209,7 +206,6 @@ module.exports = function(robot) {
         if (code !== 0) {
           param.msg.reply('Oops! :skull: Somthing is wrong, please build ' + param.project + ' again.');
           shjs.echo('Error: docker create fail!');
-          shjs.exit(1);
           throw new Error('Error: docker create fail!');
         }
 
@@ -228,7 +224,6 @@ module.exports = function(robot) {
         if (code !== 0) {
           param.msg.reply('Oops! :skull: Somthing is wrong, please build ' + param.project + ' again.');
           shjs.echo('Error: build mosquitto message fail!');
-          shjs.exit(1);
           throw new Error('Error: build mosquitto message fail!');
         }
 
@@ -247,7 +242,6 @@ module.exports = function(robot) {
         if (code !== 0) {
           param.msg.reply('Oops! :skull: Somthing is wrong, please build ' + param.project + ' again.');
           shjs.echo('Error: build end message fail!');
-          shjs.exit(1);
           throw new Error('Error: build end message fail!');
         }
 
