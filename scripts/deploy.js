@@ -139,6 +139,7 @@ module.exports = function(robot) {
     if (param.containers) {
       string = param.containers.toString();
       command = string.replace(/,/g, ' ');
+      console.log('docker rm -f ' + command);
       shjs.exec(
         'docker rm -f ' + command,
         function(code, output) {
