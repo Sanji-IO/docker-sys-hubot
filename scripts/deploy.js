@@ -6,7 +6,6 @@ var shjs = require('shelljs');
 var mktemp = require('mktemp');
 
 module.exports = function(robot) {
-  var envList = ['stage', 'production', 'test'];
   var projectList = ['mxcloud'];
   var jenkins = 'jenkins.192.168.31.86.xip.io';
 
@@ -17,8 +16,8 @@ module.exports = function(robot) {
     var param = {
       msg: msg,
       username: msg.message.user.name,
-      env: msg.match[1].toLowerCase(),
-      project: msg.match[2].toLowerCase()
+      env: 'stage',
+      project: msg.match[1].toLowerCase()
     };
 
     param.prefixName = param.env + '-' + param.project + '-' + param.username;
@@ -41,9 +40,9 @@ module.exports = function(robot) {
     var param = {
       msg: msg,
       username: msg.message.user.name,
-      env: msg.match[1].toLowerCase(),
-      project: msg.match[2].toLowerCase(),
-      brokerIp: msg.match[3]
+      env: 'test',
+      project: msg.match[1].toLowerCase(),
+      brokerIp: msg.match[2]
     };
 
     param.prefixName = param.env + '-' + param.project + '-' + param.username;
@@ -69,7 +68,6 @@ module.exports = function(robot) {
 
   function checkCommand(param) {
     var deferred = $q.defer();
-    var envResult = envList.indexOf(param.env);
     var projectResult = projectList.indexOf(param.project);
 
     if (!shjs.which('git')) {
@@ -84,7 +82,7 @@ module.exports = function(robot) {
       shjs.exit(1);
     }
 
-    if (-1 !== envResult && -1 !== projectResult) {
+    if (-1 !== projectResult) {
       if ('test' === param.env && !param.brokerIp) {
         param.msg.reply('Broker ip not found.');
         deferred.reject();
@@ -93,15 +91,12 @@ module.exports = function(robot) {
         deferred.resolve(param);
       }
     } else {
-      if (-1 === envResult) {
-        param.msg.reply(param.env + ' command not found.');
-      }
 
       if (-1 === projectResult) {
         param.msg.reply(param.project + ' not found.');
       }
 
-      if (!param.brokerIp) {
+      if ('test' === param.env && !param.brokerIp) {
         param.msg.reply('Broker ip not found.');
       }
       deferred.reject();
