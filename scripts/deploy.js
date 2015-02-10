@@ -147,9 +147,10 @@ module.exports = function(robot) {
       var downloadPath = 'http://' + jenkins + '/job/mxcloud/lastSuccessfulBuild/artifact/*zip*/archive.zip';
       var unzipCommand = 'unzip ' + path + '.zip -d ' + path;
       var refactorFolder = 'mv ' + path + '/archive/dist/* ' + path + ' && rm -rf ' + path + '/archive';
+      var chmod = 'chmod 755 ' + path + '/scripts/docker/*';
       shjs.exec(
         // 'wget https://dl.dropboxusercontent.com/u/16706203/mxcloud.tar.gz -O ' + path + '.tar.gz && tar zxvf ' + path + '.tar.gz -C ' + path,
-        'wget ' + downloadPath + ' -O ' + path + '.zip && ' + unzipCommand + ' && ' + refactorFolder,
+        'wget ' + downloadPath + ' -O ' + path + '.zip && ' + unzipCommand + ' && ' + refactorFolder + ' && ' + chmod,
         function(code, output) {
           if (code !== 0) {
             msg.reply('Oops! :skull: Somthing is wrong, please build ' + project + ' again.');
