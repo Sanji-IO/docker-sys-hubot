@@ -171,7 +171,6 @@ module.exports = function(robot) {
   }
 
   function cloneProject(param) {
-    console.log('clone project path: ' + param.path);
     var deferred = $q.defer();
     var downloadPath = 'http://' + jenkins + '/job/mxcloud/lastSuccessfulBuild/artifact/*zip*/archive.zip';
     var unzipCommand = 'unzip ' + param.path + '.zip -d ' + param.path;
