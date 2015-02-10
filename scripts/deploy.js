@@ -1,3 +1,4 @@
+/* global require,module,console,setTimeout */
 'use strict';
 
 var $q = require('q');
@@ -5,223 +6,243 @@ var shjs = require('shelljs');
 var mktemp = require('mktemp');
 
 module.exports = function(robot) {
-  robot.respond(/build (.*) (.*) with broker (.*)|build (.*) (.*)/i, function(msg){
-    var username = msg.message.user.name;
-    var env = msg.match[1].toLowerCase();
-    var project = msg.match[2].toLowerCase();
-    var brokerIp = msg.match[3];
-    var envList = ['stage', 'production', 'test'];
-    var projectList = ['mxcloud'];
-    var prefixName = env + '-' + project + '-' + username;
-    var jenkins = 'jenkins.192.168.31.86.xip.io';
+  var envList = ['stage', 'production', 'test'];
+  var projectList = ['mxcloud'];
+  var jenkins = 'jenkins.192.168.31.86.xip.io';
 
-    if ('test' === env) {
-      checkCommand()
-        .then(beforeClean)
-        .then(clean)
-        .then(createDir)
-        .then(cloneProject)
-        .then(buildWithDocker)
-        .then(buildEndMsg)
-        .catch(function(e) {
-          console.error(e.message);
-        });
-    }
+  robot.respond(/build (.*) (.*)/i, respondForStageMsg);
+  robot.respond(/build (.*) (.*) with broker (.*)/i, respondForTestMsg);
 
-    if ('stage' === env) {
-      checkCommand()
-        .then(beforeClean)
-        .then(clean)
-        .then(createDir)
-        .then(cloneProject)
-        .then(buildWithDocker)
-        .then(buildMosquittoMsg)
-        .then(buildEndMsg)
-        .catch(function(e) {
-          console.error(e.message);
-        });
-    }
+  function respondForStageMsg(msg) {
+    var param = {
+      username: msg.message.user.name,
+      env: msg.match[1].toLowerCase(),
+      project: msg.match[2].toLowerCase()
+    };
 
-    function checkCommand() {
-      var deferred = $q.defer();
-      var envResult = envList.indexOf(env);
-      var projectResult = projectList.indexOf(project);
+    param.prefixName = param.env + '-' + param.project + '-' + param.username;
+    param.msg = msg;
 
-      if (!shjs.which('git')) {
-        msg.reply('Oops! :skull: Somthing is wrong, please to contact administrator.');
-        shjs.echo('sorry, this script requires git');
-        shjs.exit(1);
-      }
-
-      if (!shjs.which('docker')) {
-        msg.reply('Oops! :skull: Somthing is wrong, please to contact administrator.');
-        shjs.echo('Sorry, this script requires docker');
-        shjs.exit(1);
-      }
-
-      if (-1 !== envResult && -1 !== projectResult) {
-        if ('test' === env && !brokerIp) {
-          msg.reply('Broker ip not found.');
-          deferred.reject();
-        } else {
-          msg.reply('Preparing to build ' + env + ' of ' + project + ', please wait... :smiling_imp:');
-          deferred.resolve();
-        }
-      } else {
-        if (-1 === envReuslt) {
-          msg.reply(env + ' command not found.');
-        }
-
-        if (-1 === projectResult) {
-          msg.reply(project + ' not found.');
-        }
-
-        if (!brokerIp) {
-          msg.reply('Broker ip not found.');
-        }
-        deferred.reject();
-      }
-      return deferred.promise;
-    }
-
-    function beforeClean() {
-      var deferred = $q.defer();
-      shjs.exec(
-        'docker ps | grep -o ' + prefixName + '.*',
-        function(code, output) {
-          if (code !== 0) {
-            deferred.resolve();
-          } else {
-            deferred.resolve(output.split('\n'));
-          }
-        }
-      );
-      return deferred.promise;
-    }
-
-    function clean(containers) {
-      var deferred = $q.defer();
-      var string;
-      var command;
-
-      if (containers) {
-        string = containers.toString();
-        console.log('containers string: ' + string);
-        command = string.replace(/,/g, ' ');
-        console.log('Prepare remove container: ' + command);
-        shjs.exec(
-          'docker rm -f ' + command,
-          function(code, output) {
-            if (code !== 0) {
-              msg.reply('Oops! :skull: Somthing is wrong, please build ' + project + ' again.');
-              shjs.echo('Error: clean container fail!');
-              shjs.exit(1);
-            }
-
-            console.log(output);
-            deferred.resolve();
-          }
-        );
-      } else {
-        deferred.resolve();
-      }
-
-      return deferred.promise;
-    }
-
-    function createDir() {
-      var deferred = $q.defer();
-      mktemp.createDir('/tmp/' + prefixName + '-XXXX', function(err, path) {
-        if (err) {
-          msg.reply('Oops! :skull: Somthing is wrong, please build ' + project + ' again.');
-          throw new Error('create folder error');
-        }
-
-        deferred.resolve(path);
+    init(param)
+      .then(checkCommand)
+      .then(beforeClean)
+      .then(clean)
+      .then(createDir)
+      .then(cloneProject)
+      .then(buildWithDocker)
+      .then(buildMosquittoMsg)
+      .then(buildEndMsg)
+      .catch(function(e) {
+        console.error(e.message);
       });
-      return deferred.promise;
+  }
+
+  function respondForTestMsg(msg) {
+    var param = {
+      username: msg.message.user.name,
+      env: msg.match[1].toLowerCase(),
+      project: msg.match[2].toLowerCase(),
+      brokerIp: msg.match[3]
+    };
+
+    param.prefixName = param.env + '-' + param.project + '-' + param.username;
+    param.msg = msg;
+
+    init(param)
+      .then(checkCommand)
+      .then(beforeClean)
+      .then(clean)
+      .then(createDir)
+      .then(cloneProject)
+      .then(buildWithDocker)
+      .then(buildEndMsg)
+      .catch(function(e) {
+        console.error(e.message);
+      });
+  }
+
+  function init(param) {
+    var deferred = $q.defer();
+    deferred.resolve(param);
+    return deferred.promise;
+  }
+
+  function checkCommand(param) {
+    var deferred = $q.defer();
+    var envResult = envList.indexOf(param.env);
+    var projectResult = projectList.indexOf(param.project);
+
+    if (!shjs.which('git')) {
+      param.msg.reply('Oops! :skull: Somthing is wrong, please to contact administrator.');
+      shjs.echo('sorry, this script requires git');
+      shjs.exit(1);
     }
 
-    function cloneProject(path) {
-      var deferred = $q.defer();
-      var downloadPath = 'http://' + jenkins + '/job/mxcloud/lastSuccessfulBuild/artifact/*zip*/archive.zip';
-      var unzipCommand = 'unzip ' + path + '.zip -d ' + path;
-      var refactorFolder = 'mv ' + path + '/archive/dist/* ' + path + ' && rm -rf ' + path + '/archive';
-      var chmod = 'chmod 755 ' + path + '/scripts/docker/*';
+    if (!shjs.which('docker')) {
+      param.msg.reply('Oops! :skull: Somthing is wrong, please to contact administrator.');
+      shjs.echo('Sorry, this script requires docker');
+      shjs.exit(1);
+    }
+
+    if (-1 !== envResult && -1 !== projectResult) {
+      if ('test' === param.env && !param.brokerIp) {
+        param.msg.reply('Broker ip not found.');
+        deferred.reject();
+      } else {
+        param.msg.reply('Preparing to build ' + param.env + ' of ' + param.project + ', please wait... :smiling_imp:');
+        deferred.resolve(param);
+      }
+    } else {
+      if (-1 === envResult) {
+        param.msg.reply(param.env + ' command not found.');
+      }
+
+      if (-1 === projectResult) {
+        param.msg.reply(param.project + ' not found.');
+      }
+
+      if (!param.brokerIp) {
+        param.msg.reply('Broker ip not found.');
+      }
+      deferred.reject();
+    }
+    return deferred.promise;
+  }
+
+  function beforeClean(param) {
+    var deferred = $q.defer();
+    shjs.exec(
+      'docker ps | grep -o ' + param.prefixName + '.*',
+      function(code, output) {
+        if (code !== 0) {
+          deferred.resolve(param);
+        } else {
+          deferred.resolve(param, output.split('\n'));
+        }
+      }
+    );
+    return deferred.promise;
+  }
+
+  function clean(param, containers) {
+    var deferred = $q.defer();
+    var string;
+    var command;
+
+    if (containers) {
+      string = containers.toString();
+      command = string.replace(/,/g, ' ');
       shjs.exec(
-        // 'wget https://dl.dropboxusercontent.com/u/16706203/mxcloud.tar.gz -O ' + path + '.tar.gz && tar zxvf ' + path + '.tar.gz -C ' + path,
-        'wget ' + downloadPath + ' -O ' + path + '.zip && ' + unzipCommand + ' && ' + refactorFolder + ' && ' + chmod,
+        'docker rm -f ' + command,
         function(code, output) {
           if (code !== 0) {
-            msg.reply('Oops! :skull: Somthing is wrong, please build ' + project + ' again.');
-            shjs.echo('Error: clone project fail!');
+            param.msg.reply('Oops! :skull: Somthing is wrong, please build ' + param.project + ' again.');
+            shjs.echo('Error: clean container fail!');
             shjs.exit(1);
           }
 
           console.log(output);
-          deferred.resolve(path);
+          deferred.resolve(param);
         }
       );
-      return deferred.promise;
+    } else {
+      deferred.resolve(param);
     }
 
-    function buildWithDocker(path) {
-      var deferred = $q.defer();
-      msg.reply(project + ' is building...:smile:');
-      shjs.exec(
-        path + '/scripts/docker/build.sh ' + env + ' ' + prefixName + ' ' + path + ' ' + brokerIp,
-        function(code, output) {
-          if (code !== 0) {
-            msg.reply('Oops! :skull: Somthing is wrong, please build ' + project + ' again.');
-            shjs.echo('Error: docker create fail!');
-            shjs.exit(1);
-          }
+    return deferred.promise;
+  }
 
-          console.log(output);
-          deferred.resolve(path);
+  function createDir(param) {
+    var deferred = $q.defer();
+    mktemp.createDir('/tmp/' + param.prefixName + '-XXXX', function(err, path) {
+      if (err) {
+        param.msg.reply('Oops! :skull: Somthing is wrong, please build ' + param.project + ' again.');
+        throw new Error('create folder error');
+      }
+
+      deferred.resolve(param, path);
+    });
+    return deferred.promise;
+  }
+
+  function cloneProject(param, path) {
+    var deferred = $q.defer();
+    var downloadPath = 'http://' + jenkins + '/job/mxcloud/lastSuccessfulBuild/artifact/*zip*/archive.zip';
+    var unzipCommand = 'unzip ' + path + '.zip -d ' + path;
+    var refactorFolder = 'mv ' + path + '/archive/dist/* ' + path + ' && rm -rf ' + path + '/archive';
+    var chmod = 'chmod 755 ' + path + '/scripts/docker/*';
+    shjs.exec(
+      'wget ' + downloadPath + ' -O ' + path + '.zip && ' + unzipCommand + ' && ' + refactorFolder + ' && ' + chmod,
+      function(code, output) {
+        if (code !== 0) {
+          param.msg.reply('Oops! :skull: Somthing is wrong, please build ' + param.project + ' again.');
+          shjs.echo('Error: clone project fail!');
+          shjs.exit(1);
         }
-      );
-      return deferred.promise;
-    }
 
-    function buildMosquittoMsg() {
-      var deferred = $q.defer();
-      shjs.exec(
-        'docker port ' + prefixName + '-mosquitto | sed s/.*://',
-        function(code, output) {
-          if (code !== 0) {
-            msg.reply('Oops! :skull: Somthing is wrong, please build ' + project + ' again.');
-            shjs.echo('Error: docker create fail!');
-            shjs.exit(1);
-          }
+        console.log(output);
+        deferred.resolve(param, path);
+      }
+    );
+    return deferred.promise;
+  }
 
-          msg.reply('Mosquitto of ' + project + ' is running on ip: 192.168.31.85 and port: ' + output);
-          deferred.resolve();
+  function buildWithDocker(param, path) {
+    var deferred = $q.defer();
+    param.msg.reply(param.project + ' is building...:smile:');
+    shjs.exec(
+      path + '/scripts/docker/build.sh ' + param.env + ' ' + param.prefixName + ' ' + path + ' ' + param.brokerIp,
+      function(code, output) {
+        if (code !== 0) {
+          param.msg.reply('Oops! :skull: Somthing is wrong, please build ' + param.project + ' again.');
+          shjs.echo('Error: docker create fail!');
+          shjs.exit(1);
         }
-      );
-      return deferred.promise;
-    }
 
-    function buildEndMsg() {
-      var deferred = $q.defer();
-      shjs.exec(
-        'docker port ' + prefixName + '-app | sed s/.*://',
-        function(code, output) {
-          if (code !== 0) {
-            msg.reply('Oops! :skull: Somthing is wrong, please build ' + project + ' again.');
-            shjs.echo('Error: build end message fail!');
-            shjs.exit(1);
-          }
+        console.log(output);
+        deferred.resolve(param, path);
+      }
+    );
+    return deferred.promise;
+  }
 
-          // Delay to send message and waiting for site running.
-          setTimeout(function() {
-            msg.reply('Build ' + env + ' of ' + project + ' complete...:beers:, you can visit by http://192.168.31.85:' + output);
-          }, 40000);
-          deferred.resolve();
+  function buildMosquittoMsg(param) {
+    var deferred = $q.defer();
+    shjs.exec(
+      'docker port ' + param.prefixName + '-mosquitto | sed s/.*://',
+      function(code, output) {
+        if (code !== 0) {
+          param.msg.reply('Oops! :skull: Somthing is wrong, please build ' + param.project + ' again.');
+          shjs.echo('Error: docker create fail!');
+          shjs.exit(1);
         }
-      );
-      return deferred.promise;
-    }
 
-  });
+        param.msg.reply('Mosquitto of ' + param.project + ' is running on ip: 192.168.31.85 and port: ' + output);
+        deferred.resolve(param);
+      }
+    );
+    return deferred.promise;
+  }
+
+  function buildEndMsg(param) {
+    var deferred = $q.defer();
+    shjs.exec(
+      'docker port ' + param.prefixName + '-app | sed s/.*://',
+      function(code, output) {
+        if (code !== 0) {
+          param.msg.reply('Oops! :skull: Somthing is wrong, please build ' + param.project + ' again.');
+          shjs.echo('Error: build end message fail!');
+          shjs.exit(1);
+        }
+
+        // Delay to send message and waiting for site running.
+        setTimeout(function() {
+          param.msg.reply('Build ' + param.env + ' of ' + param.project + ' complete...:beers:, you can visit by http://192.168.31.85:' + output);
+        }, 40000);
+        deferred.resolve(param);
+      }
+    );
+    return deferred.promise;
+  }
+
 };
