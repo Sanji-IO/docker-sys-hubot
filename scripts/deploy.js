@@ -10,7 +10,8 @@ module.exports = function(robot) {
   var jenkins = 'jenkins.192.168.31.86.xip.io';
 
   robot.respond(/build stage (.*)/i, respondForStageMsg);
-  robot.respond(/build test (.*) with broker (.*)/i, respondForTestMsg);
+  robot.respond(/build test (.*) with mock/i, respondForTestMockMsg);
+  robot.respond(/build test (.*) with broker (.*)/i, respondForTestBrokerMsg);
 
   function respondForStageMsg(msg) {
     var param = {
@@ -36,7 +37,32 @@ module.exports = function(robot) {
       });
   }
 
-  function respondForTestMsg(msg) {
+  function respondForTestMockMsg(msg) {
+    var param = {
+      msg: msg,
+      username: msg.message.user.name,
+      env: 'test',
+      isMock: true,
+      project: msg.match[1].toLowerCase(),
+      brokerIp: msg.match[2]
+    };
+
+    param.prefixName = param.env + '-' + param.project + '-' + param.username;
+
+    init(param)
+      .then(checkCommand)
+      .then(beforeClean)
+      .then(clean)
+      .then(createDir)
+      .then(cloneProject)
+      .then(buildWithDocker)
+      .then(buildEndMsg)
+      .catch(function(e) {
+        console.error(e.message);
+      });
+  }
+
+  function respondForTestBrokerMsg(msg) {
     var param = {
       msg: msg,
       username: msg.message.user.name,
@@ -199,9 +225,22 @@ module.exports = function(robot) {
   function buildWithDocker(param) {
     console.log('=== build with docker ===');
     var deferred = $q.defer();
+    var args = [
+      param.env,
+      param.prefixName,
+      param.path
+    ];
+
+    if ('test' === param.env && param.isMock) {
+      args.push('');
+    } else {
+      if (param.brokerIp) {
+        args.push(param.brokerIp);
+      }
+    }
     param.msg.reply(param.project + ' is building...:smile:');
     shjs.exec(
-      param.path + '/scripts/docker/build.sh ' + param.env + ' ' + param.prefixName + ' ' + param.path + ' ' + param.brokerIp,
+      param.path + '/scripts/docker/build.sh ' + args[0] + ' ' + args[1] + ' ' + args[2] + ' ' + args[3],
       function(code, output) {
         if (code !== 0) {
           param.msg.reply('Oops! :skull: Somthing is wrong, please build ' + param.project + ' again.');
