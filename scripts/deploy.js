@@ -112,8 +112,10 @@ module.exports = function(robot) {
 
     if (-1 !== projectResult) {
       if ('test' === param.env && !param.brokerIp) {
-        param.msg.reply('Broker ip not found.');
-        throw new Error('Broker ip not found.');
+        if (!param.isMock && !param.brokerIp) {
+          param.msg.reply('Broker ip not found.');
+          throw new Error('Broker ip not found.');
+        }
       } else {
         param.msg.reply('Preparing to build ' + param.env + ' of ' + param.project + ', please wait... :smiling_imp:');
         deferred.resolve(param);
