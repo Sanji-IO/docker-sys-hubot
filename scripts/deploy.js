@@ -47,7 +47,7 @@ module.exports = function(robot) {
       brokerIp: msg.match[2]
     };
 
-    param.prefixName = param.env + '-' + param.project + '-' + param.username;
+    param.prefixName = 'apiary-'+ param.env + '-' + param.project + '-' + param.username;
 
     init(param)
       .then(checkCommand)
