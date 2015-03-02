@@ -9,6 +9,7 @@ var ip = require('ip');
 module.exports = function(robot) {
   var projectList = ['mxcloud'];
   var jenkins = 'jenkins.192.168.31.86.xip.io';
+  var iface = 'eth1';
 
   robot.respond(/build stage (.*)/i, respondForStageMsg);
   robot.respond(/build test (.*) with mock/i, respondForTestMockMsg);
@@ -272,7 +273,7 @@ module.exports = function(robot) {
           throw new Error('Error: build mosquitto message fail!');
         }
 
-        param.msg.reply('Mosquitto of ' + param.project + ' is running on ip: ' + ip.address() + ' and port: ' + output);
+        param.msg.reply('Mosquitto of ' + param.project + ' is running on ip: ' + ip.address(iface) + ' and port: ' + output);
         deferred.resolve(param);
       }
     );
@@ -293,7 +294,7 @@ module.exports = function(robot) {
 
         // Delay to send message and waiting for site running.
         setTimeout(function() {
-          param.msg.reply('Build ' + param.env + ' of ' + param.project + ' complete...:beers:, you can visit by https://' + ip.address() + ':' + output);
+          param.msg.reply('Build ' + param.env + ' of ' + param.project + ' complete...:beers:, you can visit by https://' + ip.address(iface) + ':' + output);
         }, 50000);
         deferred.resolve(param);
       }
