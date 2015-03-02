@@ -4,7 +4,6 @@
 var $q = require('q');
 var shjs = require('shelljs');
 var mktemp = require('mktemp');
-var ip = require('ip');
 
 module.exports = function(robot) {
   var projectList = ['mxcloud'];
