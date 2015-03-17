@@ -7,7 +7,7 @@ var mktemp = require('mktemp');
 
 module.exports = function(robot) {
   var projectList = ['mxcloud'];
-  var jenkins = 'jenkins.192.168.31.86.xip.io';
+  var jenkins = 'http://jenkins.syssw.moxa.com/';
   var HOST_IP = process.env.HOST_IP || '192.168.31.86';
 
   robot.respond(/build stage (.*)/i, respondForStageMsg);
