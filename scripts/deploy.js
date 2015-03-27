@@ -7,7 +7,7 @@ var mktemp = require('mktemp');
 
 module.exports = function(robot) {
   var projectList = ['mxcloud'];
-  var jenkins = 'http://jenkins.syssw.moxa.com/';
+  var jenkinsDomain = 'jenkins.syssw.moxa.com';
   var HOST_IP = process.env.HOST_IP || '192.168.31.86';
 
   robot.respond(/build stage (.*)/i, respondForStageMsg);
@@ -209,7 +209,7 @@ module.exports = function(robot) {
   function cloneProject(param) {
     console.log('=== clone project ===');
     var deferred = $q.defer();
-    var downloadPath = 'http://' + jenkins + '/job/mxcloud/lastSuccessfulBuild/artifact/*zip*/archive.zip';
+    var downloadPath = 'http://' + jenkinsDomain + '/job/mxcloud/lastSuccessfulBuild/artifact/*zip*/archive.zip';
     var unzipCommand = 'unzip ' + param.path + '.zip -d ' + param.path;
     var refactorFolder = 'mv ' + param.path + '/archive/dist/* ' + param.path + ' && rm -rf ' + param.path + '/archive';
     var chmod = 'chmod 755 ' + param.path + '/scripts/docker/*';
