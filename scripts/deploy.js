@@ -8,7 +8,7 @@ var mktemp = require('mktemp');
 module.exports = function(robot) {
   var projectList = ['mxcloud'];
   var jenkinsDomain = 'jenkins.syssw.moxa.com';
-  var HOST_IP = process.env.HOST_IP || '192.168.31.86';
+  var HOST_IP = process.env.HOST_IP || '192.168.31.202';
 
   robot.respond(/build stage (.*)/i, respondForStageMsg);
   robot.respond(/build test (.*) with mock/i, respondForTestMockMsg);
